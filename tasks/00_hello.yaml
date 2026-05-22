@@ -1,0 +1,10 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: hello
+spec:
+  steps:
+  - name: hello
+    image: harbor.devops.io/devops/alpine:latest
+    command: ["/bin/sh", "-c", "echo 'Hello world'"]

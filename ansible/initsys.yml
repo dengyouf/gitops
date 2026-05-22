@@ -1,0 +1,5 @@
+---
+roles:
+  - src: https://github.com/dengyouf/ansible-galaxy-initsys.git
+    scm: git
+    version: main

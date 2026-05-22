@@ -1,0 +1,9 @@
+---
+aoiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: hello-run
+spec:
+  serviceAccountName: harbor-
+  taskRef:
+    name: hello

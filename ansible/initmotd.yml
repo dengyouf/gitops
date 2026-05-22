@@ -1,0 +1,5 @@
+---
+roles:
+  - src: https://github.com/dengyouf/ansible-galaxy-motd.git
+    scm: git
+    version: main

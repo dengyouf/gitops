@@ -1,0 +1,9 @@
+---
+- name: Ansible-Galaxy-InitSystem
+  hosts: all
+  remote_user: root
+  become: yes
+
+  tasks:
+    - include_role:
+        name: ansible-galaxy-initsys
