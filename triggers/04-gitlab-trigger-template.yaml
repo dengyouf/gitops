@@ -1,0 +1,25 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: gitlab-trigger-template
+spec:
+  params:  # 定义参数
+  - name: git-repo
+  - name: branch
+  resourcetemplates:
+  - apiVersion: tekton.dev/v1
+    kind: TaskRun
+    metadata:
+      generateName: gitlab-trigger-run-  # TaskRun 名称前缀
+    spec:
+      serviceAccountName: tekton-triggers-gitlab-sa
+      params:
+        - name: branch
+          value: $(tt.params.branch)
+        - name: git-repo
+          value: $(tt.params.git-repo)
+      workspaces:
+        - name: source
+          emptyDir: {}
+      taskRef:  # 引用外部 Task
+        name: checkout  # 

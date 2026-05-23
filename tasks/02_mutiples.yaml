@@ -1,0 +1,24 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: mutiples
+spec:
+  steps:
+  - name: first
+    image: harbor.devops.io/devops/alpine:latest
+    command: ["/bin/sh", "-c", "echo 'Fisrt Setp...'"]
+  - name: second
+    image: harbor.devops.io/devops/alpine:latest
+    command: 
+    - /bin/sh
+    args: ["-c", "echo 'Second Setp...'"]
+---
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: mutiples-run
+spec:
+  serviceAccountName: harbor-sa
+  taskRef:
+    name: mutiples

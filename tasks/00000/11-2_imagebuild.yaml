@@ -1,0 +1,90 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: imagebuild
+spec:
+  params:
+  - name: buildcmd
+    type: string
+    description: "请输入构建命令"
+  - name: project-dir
+    type: string
+    description: "请输入项目名字"
+    default: "."
+  workspaces:
+  - name: source
+    mountPath: /workspace/source
+  results:
+  - name: imageName
+    description: "镜像名字"
+  steps:
+  - name: image-build 
+    image: harbor.devops.io/devops/buildah:v1.43.1
+    workingDir: /workspace/source
+    securityContext:
+      privileged: true
+      capabilities:
+        add:
+        - SYS_ADMIN
+    env:
+    - name: TZ
+      value: "Asia/Shanghai" 
+    - name: BUILD_REGISTRY_SOURCES
+      value: '{"insecureRegistries": ["harbor.devops.io"]}'
+    script: |
+      set -e
+      
+      # 配置 hosts
+      echo "192.168.122.131 harbor.devops.io" >> /etc/hosts
+      
+      # 配置 insecure registry
+      mkdir -p /etc/containers
+      cat > /etc/containers/registries.conf << EOF
+      [registries.insecure]
+      registries = ['harbor.devops.io']
+      EOF
+      
+      export BUILDAH_REGISTRY_TLS_VERIFY=0
+      
+      # 登录
+      echo "Harbor12345" | buildah login --tls-verify=false -u admin --password-stdin harbor.devops.io
+      
+      echo "========================================="
+      echo "执行构建命令: $(params.buildcmd)"
+      echo "========================================="
+      
+      # 执行构建
+      $(params.buildcmd)
+      # Push 镜像
+      IMAGE_NAME=$(echo $(params.buildcmd)| sed -n 's/.*-t \([^ ]*\).*/\1/p')
+      echo "Image tag: $IMAGE_TAG"
+      echo -n "${IMAGE_NAME}" > $(results.imageName.path)
+  
+      buildah push --tls-verify=false ${IMAGE_NAME}
+      
+# ---
+# apiVersion: tekton.dev/v1
+# kind: TaskRun
+# metadata:
+#   name: imagebuild-run
+# spec:
+#   workspaces:
+#   - name: source
+#     persistentVolumeClaim:
+#       claimName: source-code-pvc
+#   taskRef:
+#     name: imagebuild
+#   params:
+#     - name: buildcmd
+#       value: "buildah --tls-verify=false  bud -t harbor.devops.io/devops/hello-springboot:$(date +%Y%m%d-%H%M%S)"
+#     - name: project-dir
+#       value: "."
+#   serviceAccountName: harbor-sa
+#   # 添加 Pod 级别的安全配置
+#   # podTemplate:
+#   #   securityContext:
+#   #     runAsUser: 0  # 以 root 运行
+#   #     runAsGroup: 0
+#   #   # 启用特权模式
+#   #   privileged: true

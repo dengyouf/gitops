@@ -1,0 +1,17 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task 
+metadata:
+  name: hello-params
+  namespace: default
+spec:
+  params:
+  - name: target
+    type: string
+    default: "tekton"
+  steps:
+  - name: say-hello
+    image: harbor.devops.io/devops/alpine:latest
+    command:
+    - /bin/sh
+    args: ['-c', 'echo "Hello $(params.target)"']

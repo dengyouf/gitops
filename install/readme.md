@@ -13,6 +13,10 @@ Client version: 0.42.2
 Pipeline version: v1.12.0
 Dashboard version: v0.68.0
 
+kubectl apply --filename \
+https://storage.googleapis.com/tekton-releases/triggers/latest/release.yaml
+kubectl apply --filename \
+https://storage.googleapis.com/tekton-releases/triggers/latest/interceptors.yaml
 ```
 
 2. 修改dashboard service类型为 NodePort

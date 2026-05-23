@@ -1,0 +1,45 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: pipeline-s2i-run
+  namespace: default
+  generateName: pipeline-s2i-run-
+spec:
+  pipelineRef:
+    name: pipeline-s2i
+  params:
+  - name: git-repo
+    value: "http://gitlab.devops.io/devops/hello-springboot.git"
+  - name: branch
+    value: "main"
+  - name: buildcmd
+    value: "mvn package -DskipTests"
+  - name: project-dir
+    value: "."
+  - name: image-name
+    value: "harbor.devops.io/devops/hello-springboot"
+  
+  workspaces:
+  # 共享源代码工作空间
+  - name: shared-workspace
+    persistentVolumeClaim:
+      claimName: source-code-pvc
+  # # Maven 缓存工作空间
+  - name: maven-cache
+    persistentVolumeClaim:
+      claimName: maven-cache-pvc
+  
+  taskRunTemplate:
+    serviceAccountName: harbor-sa
+  taskRunSpecs:
+  - pipelineTaskName: deploy-to-k8s
+    serviceAccountName: k8s-deploy-sa 
+  
+    # Pod 模板配置（特权模式）
+    podTemplate:
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
+        fsGroup: 0
+      # 为所有 Task 启用特权模式（imagebuild 需要）
+      # 注意：只有需要特权的 Task 会使用，其他 Task 不受影响

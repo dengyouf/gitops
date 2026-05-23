@@ -1,0 +1,36 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: script-params
+spec:
+  params:
+  - name: text
+    type: string
+    description: "请输入文本"
+    default: "-"
+  steps:
+  - name: hello
+    image: harbor.devops.io/devops/alpine:latest
+    script: |
+      #!/bin/sh
+      echo "Task with Script ..."
+      echo "Installing necessary tools"
+      sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
+      apk update
+      apk add tzdata
+      cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+      DATATIME=$(date "+%F %T")
+      echo "$DATATIME-$(params.text)"
+---
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: scritp-params-run
+spec:
+  serviceAccountName: harbor-sa
+  taskRef:
+    name: script-params
+  params:
+  - name: text
+    value: "hello tekton"

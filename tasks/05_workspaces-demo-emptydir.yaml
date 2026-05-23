@@ -1,0 +1,40 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: workspaces-demo
+spec:
+  workspaces:
+  - name: messages
+    description: This Folder where we write message to.
+    optional: true
+    mountPath: /data 
+  params:
+  - name: target
+    type: string
+  steps:
+  - name: write-message
+    image: harbor.devops.io/devops/alpine:latest
+    script: |
+      #!/bin/sh
+      set -xe
+      if [ "$(workspaces.messages.bound)" == "true" ]; then
+        echo "Hello $(params.target)" > $(workspaces.messages.path)/message
+      fi
+      echo "Mount Path:  $(workspaces.messages.path)"
+      echo Volume Name: "$(workspaces.messages.volume)"
+---
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: workspaces-demo-run
+spec:
+  serviceAccountName: harbor-sa
+  workspaces:
+  - name: messages
+    emptyDir: {}   # 临时存储，TaskRun结束后数据丢失
+  taskRef:
+    name: workspaces-demo
+  params:
+  - name: target
+    value: "dengyouf"

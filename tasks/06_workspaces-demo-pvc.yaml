@@ -1,0 +1,55 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: workspaces-pvc-task
+spec:
+  workspaces:
+  - name: messages
+    description: This Folder where we write message to.
+    optional: true
+    mountPath: /data 
+  params:
+  - name: target
+    type: string
+  steps:
+  - name: write-message
+    image: harbor.devops.io/devops/alpine:latest
+    script: |
+      #!/bin/sh
+      set -xe
+      if [ "$(workspaces.messages.bound)" == "true" ]; then
+        echo "Hello $(params.target)" > $(workspaces.messages.path)/message
+      fi
+      echo "Mount Path:  $(workspaces.messages.path)"
+      echo Volume Name: "$(workspaces.messages.volume)"
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: workspaces-pvc
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: nfs-client
+---
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name:  workspaces-pvc-task-run
+spec:
+  serviceAccountName: harbor-sa
+  workspaces:
+  - name: messages
+    persistentVolumeClaim:
+      claimName: workspaces-pvc
+  taskRef:
+    name:  workspaces-pvc-task
+  params:
+  - name: target
+    value: "world"

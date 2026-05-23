@@ -1,0 +1,52 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: workspaces-sc-task
+spec:
+  workspaces:
+  - name: messages
+    description: This Folder where we write message to.
+    optional: true
+    mountPath: /data 
+  params:
+  - name: target
+    type: string
+  steps:
+  - name: write-message
+    image: harbor.devops.io/devops/alpine:latest
+    script: |
+      #!/bin/sh
+      set -xe
+      if [ "$(workspaces.messages.bound)" == "true" ]; then
+        echo "Hello $(params.target)" > $(workspaces.messages.path)/message
+        echo "✅ Message written successfully"
+      fi
+      echo "📁 Mount Path: $(workspaces.messages.path)"
+      echo "💾 Volume Name: $(workspaces.messages.volume)"
+      echo ""
+      echo "📖 Message content:"
+      cat $(workspaces.messages.path)/message 2>/dev/null || echo "No message file"
+
+---
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: workspaces-sc-task-run
+spec:
+  serviceAccountName: harbor-sa
+  taskRef:
+    name: workspaces-sc-task
+  params:
+  - name: target
+    value: "sc"
+  workspaces:
+  - name: messages                    # ✅ 只需要一个 name
+    volumeClaimTemplate:              # ✅ 正确的缩进
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+        storageClassName: nfs-client  # 使用 nfs-client StorageClass

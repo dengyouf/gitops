@@ -1,0 +1,17 @@
+---
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: pipeline-params-run
+spec:
+  params:
+  - name: target
+    value: "pipelinerun"
+  - name: text
+    value: "this is pipelinerun."
+  # 为所有任务统一配置模板
+  taskRunTemplate:
+    serviceAccountName: harbor-sa
+  pipelineRef:
+    name: pipeline-params
+  

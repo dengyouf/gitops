@@ -2,8 +2,11 @@
 apiVersion: tekton.dev/v1
 kind: TaskRun
 metadata:
-  name: hello-run
+  name: hello-params-run
 spec:
   serviceAccountName: harbor-sa
   taskRef:
-    name: hello
+    name: hello-params
+  params:
+  - name: target
+    value: "dengyouf"

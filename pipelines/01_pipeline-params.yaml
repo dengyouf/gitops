@@ -1,0 +1,31 @@
+---
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: pipeline-params
+spec:
+  params:
+  - name: target
+    type: string
+    default: "tekton"
+  - name: text
+    type: string
+    description: "请输入文本"
+    default: "-"
+  tasks:
+  - name: step-one
+    taskRef:
+      name: hello-params
+    params:           # 需要将Pipeline参数传递给Task
+    - name: target
+      value: $(params.target)
+    
+  - name: step-two
+    taskRef:
+      name: script-params
+    params:           # 需要将Pipeline参数传递给Task
+    - name: text
+      value: $(params.text)
+    runAfter: 
+    - step-one     # 👈 等待 step-one 完成，所以 step-two 后执行
+    

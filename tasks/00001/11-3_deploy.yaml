@@ -1,0 +1,52 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: k8s-deploy-sa
+imagePullSecrets:
+  - name: harbor-secret
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: k8s-deploy-sa
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: k8s-deploy-sa
+  namespace: default
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: deploy-to-k8s
+spec:
+  params:
+  - name: image-name
+    type: string
+    description: "要部署的镜像名称" 
+  workspaces:
+  - name: source
+    mountPath: /workspace/source
+  steps:
+  - name: update-yaml
+    image: harbor.devops.io/devops/alpine:latest
+    script: |
+      #!/bin/sh
+      sed -i -e \
+        "s@__IMAGE__@$(params.image-name)@g" \
+        "$(workspaces.source.path)/mainfests/deployment.yaml"
+      cat  "$(workspaces.source.path)/mainfests/deployment.yaml"
+    # workingDir: /workspace/source
+  - name: deploy-by-kubectl
+    # image: lachlanevenson/k8s-kubectl:latest
+    image: harbor.devops.io/devops/k8s-kubectl:latest
+    script: |
+      #!/bin/sh
+      cat  "$(workspaces.source.path)/mainfests/deployment.yaml"
+      kubectl apply -f  "$(workspaces.source.path)/mainfests/deployment.yaml"
+
+    

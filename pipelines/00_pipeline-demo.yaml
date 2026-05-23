@@ -1,0 +1,15 @@
+---
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: pipeline-demo
+spec:
+  tasks:
+  - name: hello-task 
+    taskRef:
+      name: hello
+  - name: mutiples-task 
+    taskRef:
+      name: mutiples
+
+  

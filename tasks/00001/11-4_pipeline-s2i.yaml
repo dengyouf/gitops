@@ -1,0 +1,99 @@
+---
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: pipeline-s2i
+  namespace: default
+spec:
+  params:
+  - name: git-repo
+    type: string
+    description: "Git 仓库地址"
+    default: "https://gitlab.devops.io/your-project/hello-springboot.git"
+  - name: branch
+    type: string
+    description: "Git 分支"
+    default: "main"
+  - name: buildcmd
+    type: string
+    description: "Maven 构建命令"
+    default: "mvn package -DskipTests"
+  - name: project-dir
+    type: string
+    description: "项目子目录"
+    default: "."
+  - name: image-name
+    type: string
+    description: "镜像名称"
+    default: "harbor.devops.io/devops/hello-springboot"
+  
+  workspaces:
+  - name: shared-workspace
+    description: "共享工作空间，用于在 Tasks 之间传递代码"
+  - name: maven-cache
+    description: "Maven 依赖缓存"
+    optional: true
+
+  tasks:
+  # Task 1: 代码拉取
+  - name: checkout
+    taskRef:
+      name: checkout
+    params:
+    - name: git-repo
+      value: $(params.git-repo)
+    - name: branch
+      value: $(params.branch)
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+
+  # Task 2: 源码构建（Maven 打包）
+  - name: src-build
+    taskRef:
+      name: srcbuild
+    params:
+    - name: buildcmd
+      value: $(params.buildcmd)
+    - name: project-dir
+      value: $(params.project-dir)
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+    - name: maven-cache
+      workspace: maven-cache
+      
+    runAfter:
+    - checkout
+
+  # Task 3: 镜像构建并推送
+  - name: image-build
+    taskRef:
+      name: imagebuild
+    params:
+    - name: buildcmd
+      # value: "buildah --tls-verify=false bud -t $(params.image-name):$(TZ=Asia/Shanghai date +%Y%m%d-%H%M%S) ."
+      value: "buildah --tls-verify=false bud -t  $(params.image-name):$(tasks.checkout.results.tag)  ."
+    - name: project-dir
+      value: $(params.project-dir)
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+    runAfter:
+    - src-build
+
+  # 部署
+  - name: deploy-to-k8s
+    taskRef:
+      name: deploy-to-k8s
+    params:
+    - name: image-name
+      value: $(tasks.image-build.results.imageName) 
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+    runAfter:
+    - image-build
+  
+
+  

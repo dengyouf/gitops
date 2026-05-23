@@ -1,0 +1,77 @@
+---
+apiVersion: v1
+kind: Secret 
+metadata:
+  name: gitlab-auth-secret
+  annotations:
+    tekton.dev/git-0: http://192.168.122.130
+type: kubernetes.io/basic-auth
+stringData:
+  username: root
+  password: dy6545286
+---
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: harbor-sa
+  namespace: default
+imagePullSecrets:
+  - name: harbor-secret
+secrets:
+  - name: gitlab-auth-secret
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: checkout
+spec:
+  params:
+  - name: git-repo
+    type: string
+    description: "请输入git repo"
+    default: "-"
+  - name: branch
+    type: string
+    description: "请输入git branch"
+    default: "main"
+  results:
+  - name: tag
+    description: "镜像tag"
+  
+  workspaces:
+  - name: source
+    mountPath: /workspace/source
+  steps:
+  - name: checkout
+    # image: alpine/git:v2.32.0
+    image: harbor.devops.io/devops/alpine-git:v2.32.0
+    workingDir: /workspace/source
+    script: |
+      #!/bin/sh
+      set -e
+      echo "192.168.122.130 gitlab.devops.io" >> /etc/hosts
+      echo "Current working directory: $(pwd)"
+      echo "Directory contents:"
+      ls -la
+      
+      # 判断当前目录是否为空（不包括隐藏文件）
+      if [ -z "$(ls -A)" ]; then
+        echo "Directory is empty, cloning repository..."
+        git clone -b $(params.branch) $(params.git-repo) .
+        echo "Clone successfully"
+      else
+        echo "Directory is not empty, cleaning and re-cloning..."
+        # 删除所有文件和目录（包括隐藏文件）
+        rm -rf ./*
+        rm -rf ./.??* 2>/dev/null || true
+        echo "Directory cleaned, cloning repository..."
+        git clone -b $(params.branch) $(params.git-repo) .
+      fi
+
+      GIT_COMMIT_SHORT=$(git rev-parse --short=7 HEAD)
+      BRANCH=$(git rev-parse --abbrev-ref HEAD)
+      echo "Git Short Commit: ${GIT_COMMIT_SHORT}"
+      echo "Git Commit Branch: ${BRANCH}"
+      tag=${BRANCH}-${GIT_COMMIT_SHORT}
+      echo -n ${tag} |tee $(results.tag.path)

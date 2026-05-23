@@ -1,0 +1,39 @@
+apiVersion: v1
+data:
+  await-sidecar-readiness: "true"
+  # 明确需要使用多个 PVC，最直接的解决方法就是禁用亲和性助手功能。
+  coschedule: "disabled"
+  disable-creds-init: "false"
+  disable-inline-spec: ""
+  enable-api-fields: beta
+  enable-artifacts: "false"
+  enable-cel-in-whenexpression: "false"
+  enable-concise-resolver-syntax: "false"
+  enable-kubernetes-sidecar: "false"
+  enable-param-enum: "false"
+  enable-provenance-in-status: "true"
+  enable-step-actions: "true"
+  enable-tekton-oci-bundles: "false"
+  enable-wait-exponential-backoff: "false"
+  enforce-nonfalsifiability: none
+  keep-pod-on-cancel: "false"
+  require-git-ssh-secret-known-hosts: "false"
+  results-from: termination-message
+  running-in-environment-with-injected-sidecars: "true"
+  send-cloudevents-for-runs: "true"
+  set-security-context: "false"
+  set-security-context-read-only-root-filesystem: "false"
+  trusted-resources-verification-no-match-policy: ignore
+kind: ConfigMap
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","data":{"await-sidecar-readiness":"true","coschedule":"workspaces","disable-creds-init":"false","disable-inline-spec":"","enable-api-fields":"beta","enable-artifacts":"false","enable-cel-in-whenexpression":"false","enable-concise-resolver-syntax":"false","enable-kubernetes-sidecar":"false","enable-param-enum":"false","enable-provenance-in-status":"true","enable-step-actions":"true","enable-tekton-oci-bundles":"false","enable-wait-exponential-backoff":"false","enforce-nonfalsifiability":"none","keep-pod-on-cancel":"false","require-git-ssh-secret-known-hosts":"false","results-from":"termination-message","running-in-environment-with-injected-sidecars":"true","send-cloudevents-for-runs":"true","set-security-context":"false","set-security-context-read-only-root-filesystem":"false","trusted-resources-verification-no-match-policy":"ignore"},"kind":"ConfigMap","metadata":{"annotations":{},"labels":{"app.kubernetes.io/instance":"default","app.kubernetes.io/part-of":"tekton-pipelines"},"name":"feature-flags","namespace":"tekton-pipelines"}}
+  creationTimestamp: "2026-05-22T14:02:27Z"
+  labels:
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/part-of: tekton-pipelines
+  name: feature-flags
+  namespace: tekton-pipelines
+  resourceVersion: "1128589"
+  uid: cbc50671-5916-46fd-af94-5bf1c6e27614

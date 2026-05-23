@@ -1,0 +1,26 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: script
+spec:
+  steps:
+  - name: hello
+    image: harbor.devops.io/devops/alpine:latest
+    script: |
+      #!/bin/sh
+      echo "Task with Script ..."
+      echo "Installing necessary tools"
+      sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
+      apk update
+      apk add curl
+      echo "All done."
+---
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: scritp-run
+spec:
+  serviceAccountName: harbor-sa
+  taskRef:
+    name: script

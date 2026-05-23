@@ -1,0 +1,85 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: srcbuild
+spec:
+  params:
+  - name: buildcmd
+    type: string
+    description: "请输入构建命令"
+    default: "mvn package -DskipTest"
+  - name: project-dir
+    type: string
+    description: "请输入项目名字"
+    default: "."
+  workspaces:
+  - name: source
+    mountPath: /workspace/source
+  - name: maven-cache
+    mountPath: /root/.m2/
+    optional: true
+
+  steps:
+  - name: src-build 
+    # image: alpine/git:v2.32.0
+    image: harbor.devops.io/devops/maven:3.9.16-eclipse-temurin-17-noble
+    env:
+    - name: MAVEN_OPTS
+      value: "-Dmaven.repo.local=/root/.m2/repository"  # 明确指定缓存路径
+    - name: HOME
+      value: /root  # 确保 Maven 能找到配置
+    workingDir: /workspace/source
+
+    script: |
+      # 进入项目目录（如果指定了子目录）
+      if [ "$(params.project-dir)" != "." ]; then
+        echo "Changing to project directory: $(params.project-dir)"
+        cd $(params.project-dir)
+        echo "Now in: $(pwd)"
+        echo "Project contents:"
+        ls -la
+      fi
+      
+      echo "========================================="
+      echo "Maven Cache Information"
+      echo "========================================="
+      echo "Maven cache location: /root/.m2/repository"
+      echo "Cache directory exists: $(test -d /root/.m2/repository && echo 'YES' || echo 'NO')"
+      echo "Cache size: $(du -sh /root/.m2/repository 2>/dev/null || echo '0')"
+      
+      echo "========================================="
+      echo "Starting Build"
+      echo "========================================="
+      echo "Build command: $(params.buildcmd)"
+      
+      # 执行构建
+      $(params.buildcmd)
+      
+      echo "========================================="
+      echo "Build completed successfully!"
+      DATATIME=$(date "+%F_%T")
+      echo ${DATATIME} >> /root/.m2/${DATATIME}.txt
+      echo "========================================="
+
+# ---
+# apiVersion: tekton.dev/v1
+# kind: TaskRun
+# metadata:
+#   name: srcbuild-run
+# spec:
+#   workspaces:
+#   - name: source
+#     persistentVolumeClaim:
+#       claimName: source-code-pvc
+#   - name: cache
+#     persistentVolumeClaim:
+#       claimName: maven-cache-pvc   # 缓存 PVC
+#   taskRef:
+#     name: srcbuild
+#   params:
+#     - name: buildcmd
+#       value: "mvn package -DskipTest -s settings.xml"
+#     - name: project-dir
+#       value: "."
+#   serviceAccountName: harbor-sa

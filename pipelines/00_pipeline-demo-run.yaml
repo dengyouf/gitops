@@ -1,0 +1,30 @@
+---
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: pipeline-demo-run
+spec:
+  # 为所有任务统一配置模板
+  taskRunTemplate:
+    serviceAccountName: harbor-sa
+  # 为每个任务单独配置sa
+  # taskRunSpecs:
+  #   - pipelineTaskName: hello-task
+  #     serviceAccountName: harbor-sa
+  #   - pipelineTaskName: mutiples-task
+  #     serviceAccountName: harbor-sa
+
+  # 需要提前定义好Pipeline资源, 正式环境、需要复用的CI/CD流程
+  # pipelineRef:
+  #   name: pipeline-demo
+
+  # 内嵌在PipelineRun内部, 测试、临时任务、一次性流程
+  pipelineSpec:
+    tasks:
+      - name: task1
+        taskRef:
+          name: hello
+      - name: task2
+        taskRef:
+          name: mutiples
+      
