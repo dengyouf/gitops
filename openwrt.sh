@@ -6,3 +6,8 @@ sudo virt-install --name immortalwrt \
     --network network=default,model=virtio  \
     --graphics=vnc,password=root,port=5966,listen=0.0.0.0 \
     --noautoconsole --import --autostart
+
+
+- 插件
+- - luci-theme-argon
+- - openclash
